@@ -1,40 +1,41 @@
 % Conversor A/D SAR single-ended
 % 11/03/2018
 % TCC 2
-% Universidade de BrasÌlia
+% Universidade de Bras√≠lia
 % Autor: Iago Sergio Pinheiro Pereira
-% MatrÌcula: 11/0148959
-% vers„o 0.7
+% Matr√≠cula: 11/0148959
+% vers√£o 0.7
 % 
 clear all;
 clc;
 
-%% Vari·veis do modelo
-n_bits = 12; % n˙mero de bits do conversor
-Vref = 1;  % Tens„o de referÍncia
-Vcm = 1;    % Tens„o de modo comum
-Voff = 0*(Vref/(2^n_bits)); % Tens„o de offset, em funÁ„o de LSB, na saÌda
+%% Vari√°veis do modelo
+n_bits = 4; % n√∫mero de bits do conversor
+Vref = 1.8;  % Refer√™ncia de tens√£o
+Vcm = 1;    % Tens√£o de modo comum
+Voff = 0*(Vref/(2^n_bits)); % Tens√£o de offset, em fun√ß√£o de LSB, na sa√≠da
 sinal = 2; % Sinal de entrada: 1=rampa, 2=senoide
 
 %% Sinal de entrada
 switch sinal
     case 1
-        tmax = 1;   % tempo do processo inteiro em segundos
-        sp = 10000; % n˙mero de amostras
-        fs = sp/tmax; %taxa de amostragem
-        t = 0:(1/fs):(tmax-(1/fs));
-        Vin = t;
+        n = 1;  % multiplicador (manter em 1 para a rampa)
+        sp = 10*2^n_bits; % n√∫mero de amostras
+        Vin = 0:(Vref/sp):(Vref-(Vref/sp));
     case 2
-        tmax = 1;   % tempo do processo inteiro em segundos
-        sp = 20000; % n˙mero de amostras
+        tmax = 0.1;   % tempo do processo inteiro em segundos
+        sp = 200*2^n_bits; % n√∫mero de amostras
+        n = 4;  % multiplicador da taxa de amostragem
         fs = sp/tmax; %taxa de amostragem
         t = 0:(1/fs):(tmax-(1/fs));
-        f = fs/30;
-        Vin = (Vref/2) + (Vref/2)*cos(2*pi*f*t);
+%         tr = 0:(1/(n*fs)):(tmax-(1/(n*fs)));
+        f = fs/(150);
+        Vin = ((Vref-(Vref/(2^n_bits)))/2) + ((Vref-(Vref/(2^n_bits)))/2)*cos(2*pi*f*t);
+%         Vin_r = ((Vref-(Vref/(2^n_bits)))/2) + ((Vref-(Vref/(2^n_bits)))/2)*cos(2*pi*f*tr);
 end;
 
 %% Array de capacitores
-C = 15e-15;  % Capacit‚ncia unit·ria
+C = 30e-15;  % Capacit√¢ncia unit√°ria
 C_cte = 3;  % Capacitor da Tecnologia: cmm=1 , cdmm=2 ,ctmm=3
 AC = 0.0023;  % Capacitor da tecnologia: cmm=0.004 , cdmm=0.0028 , ctmm =0.0023
 C_mismatch = 1; % 0 = sem mismatch, 1 = mismatch gaussiano, 2 = mismatch fixo
@@ -47,8 +48,8 @@ switch C_mismatch
         end;
         C_ar(n_bits+1) = C; %dummy
     case 1  %com mismatch gaussiano
-        WL = (C/C_cte)*1e15;   % ¡rea do capacitor
-        C_mis_sig = AC/sqrt(WL); % desvio padr„o
+        WL = (C/C_cte)*1e15;   % √Årea do capacitor
+        C_mis_sig = AC/sqrt(WL); % desvio padr√£o
         for i=1:n_bits
             C_ar(i) = C*(normrnd(1,C_mis_sig))*(2^(n_bits-i));
         end;
@@ -62,10 +63,10 @@ switch C_mismatch
 end;
 C_total = sum(C_ar);
 
-%% Proceso de Convers„o Single Ended Tradicional
+%% Proceso de Convers√£o Single Ended
 for i=1:sp
     bit = zeros(1,n_bits);
-% Fase 1: DistribuiÁ„o de (Vcm-Vin) sobre os capacitores
+% Fase 1: Distribui√ß√£o de (Vcm-Vin) sobre os capacitores
     Qi = C_total*(Vcm - Vin(i));
 % Fase 2: Entrada dos bits no DAC
     for a=1:n_bits
@@ -87,7 +88,7 @@ for i=1:sp
     Vout_b(i,:) = bit;
 end;
 
-%% RecomposiÁ„o do sinal
+%% Recomposi√ß√£o do sinal
 for i=1:sp
     for a=1:n_bits
         Vout_r(a) = (Vout_b(i,a)*(Vref/(2^a)));
@@ -99,26 +100,28 @@ end;
 figure;
 if(sinal==1)
     plot(Vin,Vin,'-b',Vin,Vout,'--ro'); % Plotando rampa
+    xlabel('Vin (V)');
+    ylabel('Vout (V)');
 else
     plot(t,Vin,'-b',t,Vout,'--ro'); % Plotando senoide
-    xlim([0 0.01]);
+    xlim([0 4/f]);
+    xlabel('Tempo (s)');
+    ylabel('Tens√£o (V)');
 end;
-legend('Sinal analÛgico','Sinal digital');
+legend('Sinal anal√≥gico','Sinal digital');
 title(['Conversor SAR de ',num2str(n_bits),' bits']);
-xlabel('Vin (V)');
-ylabel('Vout (V)');
 
-%% C·lculo do DNL e INL (apenas para entrada rampa)
+%% C√°lculo do DNL e INL (apenas para entrada rampa)
 if(sinal==1)    
     figure(2);
     edges = [0:(Vref/(2^n_bits)):Vref];
     h = histogram(Vout,edges);
     counts = h.Values;
     DNL(1)=0;
-    for i=2:(2^n_bits)
+    for i=2:((2^n_bits)-1)
         DNL(i) = (counts(i)-counts(i-1))/(sp/((2^n_bits)-1));
     end;
-%% C·lculo do INL
+%% C√°lculo do INL
     INL(1)=DNL(1);
     for i=1:(length(DNL)-1)
         INL(i+1) = INL(i) + DNL(i+1);
@@ -130,17 +133,17 @@ if(sinal==1)
     grid on;
 %     ylim([-3 3]);
     title(['DNL - Conversor de ',num2str(n_bits),' bits']);
-    xlabel('NÌveis');
+    xlabel('N√≠veis');
     ylabel('DNL');
     subplot(2,1,2);
     plot(INL,'--ro');
     grid on;
 %     ylim([-3 3]);
     title(['INL - Conversor de ',num2str(n_bits),' bits']);
-    xlabel('NÌveis');
+    xlabel('N√≠veis');
     ylabel('INL');
 end;
-%% An·lise espectral dos sinais de entrada e saÌda do conversor
+%% An√°lise espectral dos sinais de entrada e sa√≠da do conversor
 if(sinal==2)
     analise_espectral(Vin,Vout,fs);
 end;
