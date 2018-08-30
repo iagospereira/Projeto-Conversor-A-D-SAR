@@ -1,15 +1,15 @@
-%% Script para calcular parâmetros de caracterização de transistores a partir
-% de simulações.
-% Método da Equação Normal para regressão linear
+%% Script para calcular parÃ¢metros de caracterizaÃ§Ã£o de transistores a partir
+% de simulaÃ§Ãµes.
+% MÃ©todo da EquaÃ§Ã£o Normal para regressÃ£o linear
 
 % Vgs =1.2
 
 clear all;clc;
-load('C:\Users\Iago\Documents\UnB\ENE\TCC\TCC 2\Caracterização\Carac_transistores grandes\ne\ids_lambda_ne.m');
+load('ids_lambda_ne.m');
 
 ids = ids_lambda_ne;
 
-% Condições de teste
+% CondiÃ§Ãµes de teste
 vgs = 1;
 w_l = 5/2;
 kn = 166.80e-6;
