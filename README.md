@@ -10,6 +10,6 @@ Neste repositório, encontram-se o código, em Matlab, do modelo de referência 
 
 ADC_SAR.m -> Implementação de um conversor SAR de topologia Single-Ended
 
-regressao.m -> Código utilizado na caracterização dos parâmetros Vth e Kn dos transistores da tecnologia 0.18um
+regressao.m -> Código utilizado na caracterização dos parâmetros Vth e Kn dos transistores de tecnologia 0.18um
 
-regressao_lambda -> Código utilizado na caracterização do parâmetro lambda dos transistores da tecnologia 0.18um
+regressao_lambda -> Código utilizado na caracterização do parâmetro lambda dos transistores de tecnologia 0.18um
